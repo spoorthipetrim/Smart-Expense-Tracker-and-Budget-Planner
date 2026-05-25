@@ -9,15 +9,12 @@
 
 [![Project](https://img.shields.io/badge/Project-FF--01--S1-7c6dfa?style=flat-square)](.)
 [![Week](https://img.shields.io/badge/Week-4%20Final-fa6d8a?style=flat-square)](.)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-6dfac8?style=flat-square)](.)
 [![License](https://img.shields.io/badge/License-MIT-fabc6d?style=flat-square)](.)
 [![HTML](https://img.shields.io/badge/HTML5-Single%20File-E34F26?style=flat-square&logo=html5&logoColor=white)](.)
 [![JS](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](.)
 [![Charts](https://img.shields.io/badge/Chart.js-v4.4.1-FF6384?style=flat-square)](.)
 
 ---
-
-*A 4-week capstone project aligning with **UN SDG 1** (No Poverty), **SDG 4** (Quality Education), and **SDG 10** (Reduced Inequalities)*
 
 </div>
 
@@ -27,7 +24,7 @@
 
 - [Product Overview](#-product-overview)
 - [UN SDG Global Impact](#-un-sdg-global-impact)
-- [✨ Magic Features](#-magic-features)
+- [Magic Features](#-magic-features)
 - [System Architecture](#️-system-architecture)
 - [Installation Guide](#-installation-guide)
 - [Project Structure](#-project-structure)
@@ -41,7 +38,7 @@
 
 ## 🎯 Product Overview
 
-**BudX** is a lightweight, zero-install, browser-based expense tracker and budget planner designed specifically for **college students** managing limited pocket money. It provides real-time spending visibility, smart alerts, and AI-style predictions — all without requiring an account, server, or installation.
+**BudX** is a lightweight, browser-based expense tracker and budget planner designed specifically for **college students** managing limited pocket money. It provides real-time spending visibility and smart alerts — all without requiring an account, server, or installation.
 
 ### The Problem We're Solving
 
@@ -57,10 +54,10 @@
 
 ### Who It's For
 
-- 🎓 College students on fixed monthly allowances
-- 🏠 Hostel residents spending daily on food & essentials
-- 🆕 First-year students managing money independently
-- 💼 Young adults starting their first job
+- College students on fixed monthly allowances
+- Hostel residents spending daily on food & essentials
+- First-year students managing money independently
+- Young adults starting their first job
 
 ---
 
@@ -82,7 +79,7 @@ BudX is free, requires no internet after the first load, and needs no account �
 
 ## ✨ Magic Features
 
-### 1. 🔔 Smart Budget Alerts
+### 1. Smart Budget Alerts
 Set your monthly limit once. BudX automatically watches every expense you add and displays a **color-coded alert card** the moment you cross your configured threshold (default: 80%).
 
 ```
@@ -92,23 +89,23 @@ Set your monthly limit once. BudX automatically watches every expense you add an
 🔴 ≥ 100%  → Red:    "Budget Exceeded! ₹X over limit"
 ```
 
-### 2. 🚨 Overspending Warning System
+### 2. Overspending Warning System
 An **instant modal popup** appears the moment an expense pushes you over your limit — or past the alert threshold. It shows exactly how much you're over, and only fires once per session to avoid alert fatigue.
 
-### 3. 🏷️ Category-Based Tracking
+### 3. Category-Based Tracking
 Every expense is tagged to one of **8 categories** (Food, Transport, Shopping, Bills, Health, Entertainment, Education, Other). BudX automatically:
 - Highlights your **top-spending category**
 - Shows **percentage breakdown** of each category
 - Flags categories that exceed their individual budget limit
 
-### 4. 📊 Weekly Spending Insights
+### 4. Weekly Spending Insights
 A dedicated **Insights view** shows:
 - Day-by-day spending bars for the current week
 - **Peak day highlight** (which day you spent most)
 - 5 plain-English insight chips: *"Food dominates this week"*, *"₹180/day average"*, etc.
 - Category doughnut and daily bar charts for the week
 
-### 5. 🔮 Basic Spending Prediction
+### 5. Basic Spending Prediction
 Using your daily average spend, BudX projects:
 - **Month-end total** if current pace continues
 - **Safe daily limit** to stay within budget for the remaining days
@@ -245,15 +242,15 @@ python -m http.server 8080
 ```
 budx-planner/
 │
-├── budget_planner.html          # 🏠 Main application (self-contained)
+├── budget_planner.html          # Main application (self-contained)
 │
-├── challenge3_error_handling.html  # 🛡️ Error handling live demo
+├── challenge3_error_handling.html  # Error handling live demo
 │
-├── TeamName_W4_C3.pdf           # 📄 SDLC Engineering Report
+├── TeamName_W4_C3.pdf           # SDLC Engineering Report
 │
-├── challenge4_optimization.pdf  # ⚡ Before/After Optimization Report
+├── challenge4_optimization.pdf  # Before/After Optimization Report
 │
-├── README.md                    # 📖 This file
+├── README.md                    # This file
 │
 └── docs/
     ├── architecture.png         # System block diagram
@@ -344,7 +341,7 @@ function mExp(now) {
 
 ---
 
-## 🖼️ UI Gallery
+## UI Gallery
 
 > **Note:** Screenshots below represent the BudX dark-theme dashboard. Replace with actual screenshots from your deployed app.
 
@@ -368,12 +365,12 @@ function mExp(now) {
 
 | View | Key Content |
 |---|---|
-| 📊 **Dashboard** | Stats, alert card, category chart, recent expenses, add form |
-| 📋 **All Expenses** | Full log with category filter dropdown |
-| 💡 **Weekly Insights** | Day bars, insight chips, category pie, day-by-day bar |
-| 🔮 **Prediction** | Daily avg, month-end projection, 30-day chart, recommendation |
-| 🏷️ **Categories** | Per-category cards with totals and transaction counts |
-| ⚙️ **Budget Setup** | Set per-category limits, budget vs actual bar chart |
+| **Dashboard** | Stats, alert card, category chart, recent expenses, add form |
+| **All Expenses** | Full log with category filter dropdown |
+| **Weekly Insights** | Day bars, insight chips, category pie, day-by-day bar |
+| **Prediction** | Daily avg, month-end projection, 30-day chart, recommendation |
+| **Categories** | Per-category cards with totals and transaction counts |
+| **Budget Setup** | Set per-category limits, budget vs actual bar chart |
 
 ### Alert States
 
@@ -461,20 +458,14 @@ Week 4 — Optimization & Documentation
 ## 🤝 Team
 
 **Project:** FF-01-S1 — Smart Expense Tracker & Budget Planner
-**Submission:** Week 4, Challenge 3 & 4
-**Team Name:** *(Your Team Name)*
+**Team Name:** *BudX*
+**Team members:** P.Spoorthi,M.Manasvini,K.Spoorthi
 
 ---
 
 <div align="center">
 
-**Built with 💜 for students, by students**
-
-*BudX · FF-01-S1 · TeamName_W4_C3*
-
-[![SDG 1](https://img.shields.io/badge/SDG%201-No%20Poverty-E5243B?style=flat-square)](https://sdgs.un.org/goals/goal1)
-[![SDG 4](https://img.shields.io/badge/SDG%204-Quality%20Education-C5192D?style=flat-square)](https://sdgs.un.org/goals/goal4)
-[![SDG 10](https://img.shields.io/badge/SDG%2010-Reduced%20Inequalities-DD1367?style=flat-square)](https://sdgs.un.org/goals/goal10)
+*BudX · FF-01-S1 *
 
 </div>
 ###6. Visualization Library: Chart.js Chart.js is used to display expense data in the form of graphs and charts. Visual representation helps users quickly understand their spending habits and identify areas where they are overspending.
