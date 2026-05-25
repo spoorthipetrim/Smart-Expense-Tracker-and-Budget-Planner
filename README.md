@@ -1,26 +1,4 @@
-# Smart-Expense-Tracker-and-Budget-Planner
-A web application to track expenses and manage budgets.
-## Team members
-- P.Spoorthi(Representative)
-- M.Manasvini
-- K.Spoorthi
-## Project Description
-This project helps users track expenses,manage budgets,and receive spending alerts.
-## MAGIC FEATURE
-* Smart Budget Alerts Notifies users when they reach a certain percentage (like 80%) of their budget.
-* Overspending Warning System Gives instant alerts when the user exceeds their set limit.
-* Category-Based Tracking Automatically organizes expenses (food, travel, shopping) for better clarity.
-* Weekly Spending Insights Shows a simple summary of where money is being spent the most.
-* Basic Spending Prediction Estimates future expenses based on past spending patterns. 
-## Architecture/Tech Stack
-- HTML
-- CSS
-- JavaScript
-- Python Flask
-1. Frontend: HTML, CSS, JavaScript We use HTML, CSS, and JavaScript to build the user interface of the application. These technologies are essential for creating a simple, responsive, and interactive design where users can easily input their daily expenses and view their budget status. JavaScript allows real-time updates such as displaying alerts and dynamically updating expense data without refreshing the page.
-2. Backend: Python with Flask Python is chosen as the backend language because it is easy to learn, readable, and efficient for beginners. We use Flask as the framework since it is lightweight and suitable for small-scale applications. Flask helps in handling user requests, processing expense data, and implementing the core logic of budget tracking and alert generation.
-3. Database: SQLite SQLite is used for storing user expense data. It is a lightweight and serverless database, making it ideal for beginner projects. It allows easy storage and retrieval of data such as daily expenses, budget limits, and spending history without complex setup.
-4. Data Analysis Library: Pandas Pandas is used to analyze spending patterns and generate insights such as weekly summaries and basic predictions. It helps in organizing and processing data efficiently, which supports the “smart” features of the application like spending analysis.
+
    <div align="center">
 
 <img src="https://img.shields.io/badge/BudX-Smart%20Budget%20Planner-7c6dfa?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0xIDE1aC0ydi02aDJ2NnptMC04aC0yVjdoMnYyeiIvPjwvc3ZnPg==" alt="BudX"/>
@@ -499,5 +477,5 @@ Week 4 — Optimization & Documentation
 [![SDG 10](https://img.shields.io/badge/SDG%2010-Reduced%20Inequalities-DD1367?style=flat-square)](https://sdgs.un.org/goals/goal10)
 
 </div>
-6. Visualization Library: Chart.js Chart.js is used to display expense data in the form of graphs and charts. Visual representation helps users quickly understand their spending habits and identify areas where they are overspending.
+###6. Visualization Library: Chart.js Chart.js is used to display expense data in the form of graphs and charts. Visual representation helps users quickly understand their spending habits and identify areas where they are overspending.
     
