@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BudX — Smart Budget Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg:#0a0a0f; --surface:#111118; --s2:#1a1a24; --s3:#22222f;
+  --border:#2a2a3a; --accent:#7c6dfa; --a2:#fa6d8a; --a3:#6dfac8;
+  --text:#f0effe; --t2:#a09dcc; --t3:#5c5a7a;
+  --danger:#fa6d6d; --warn:#fabc6d; --success:#6dfac8;
+  --r:14px; --rs:8px;
+  --mono:'DM Mono',monospace; --disp:'DM Serif Display',serif; --sans:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:28px 20px;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto;}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:36px;}
+.logo-mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;
+  font-family:var(--disp);font-size:18px;color:#fff;font-style:italic;}
+.logo-text{font-size:20px;font-weight:800;letter-spacing:-.5px;}
+.logo-text span{color:var(--accent);}
+.nav-label{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding-left:12px;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--rs);cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--t2);transition:all .15s;margin-bottom:4px;border:none;background:transparent;width:100%;text-align:left;}
+.nav-item:hover{background:var(--s2);color:var(--text);}
+.nav-item.active{background:rgba(124,109,250,.15);color:var(--accent);}
+.nav-item i{width:18px;text-align:center;font-size:14px;}
+.nav-section{margin-bottom:28px;}
+.sidebar-footer{margin-top:auto;border-top:1px solid var(--border);padding-top:20px;}
+.ring-label{font-size:10px;color:var(--t3);text-align:center;margin-bottom:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+.ring-svg{display:block;margin:0 auto;}
+.ring-info{text-align:center;margin-top:8px;font-size:11px;color:var(--t3);}
+.ring-info strong{color:var(--text);font-family:var(--mono);}
+.threshold-row{display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 12px;
+  background:var(--s2);border-radius:var(--rs);border:1px solid var(--border);}
+.threshold-row label{font-size:10px;color:var(--t3);font-weight:600;white-space:nowrap;}
+.threshold-row input{background:transparent;border:none;color:var(--warn);font-family:var(--mono);
+  font-size:13px;font-weight:500;width:36px;outline:none;}
+.threshold-row span{font-size:12px;color:var(--t3);}
+.main{margin-left:240px;flex:1;padding:32px 36px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;}
+.page-title{font-family:var(--disp);font-size:30px;font-style:italic;}
+.page-title span{color:var(--accent);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.month-badge{background:var(--s2);border:1px solid var(--border);padding:8px 16px;border-radius:40px;
+  font-family:var(--mono);font-size:11px;color:var(--t2);}
+.add-btn{background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:40px;
+  font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;}
+.add-btn:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.back-btn{background:var(--s2);color:var(--t2);border:1px solid var(--border);padding:10px 18px;border-radius:40px;
+  font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;}
+.back-btn:hover{color:var(--text);border-color:var(--accent);}
+
+/* MAGIC 1 — Smart Alert Card */
+.alert-card{border-radius:var(--r);padding:16px 20px;display:none;align-items:flex-start;
+  gap:14px;margin-bottom:24px;border:1px solid;animation:slideDown .3s ease;}
+.alert-card.show{display:flex;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);}}
+.alert-card.safe{background:rgba(109,250,200,.07);border-color:rgba(109,250,200,.25);}
+.alert-card.mid{background:rgba(250,188,109,.08);border-color:rgba(250,188,109,.3);}
+.alert-card.danger{background:rgba(250,109,109,.08);border-color:rgba(250,109,109,.3);}
+.alert-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
+.alert-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+.alert-card.safe .alert-title{color:var(--success);}
+.alert-card.mid .alert-title{color:var(--warn);}
+.alert-card.danger .alert-title{color:var(--danger);}
+.alert-sub{font-size:12px;color:var(--t2);line-height:1.6;}
+.alert-bar{margin-top:10px;height:6px;background:var(--s3);border-radius:4px;overflow:hidden;}
+.alert-bar-fill{height:100%;border-radius:4px;transition:width .5s ease;}
+
+/* MAGIC 2 — Overspend Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,10,15,.88);z-index:500;
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--danger);border-radius:var(--r);
+  padding:36px;max-width:400px;width:90%;text-align:center;animation:popIn .3s ease;}
+.modal-box.warn-style{border-color:var(--warn);}
+@keyframes popIn{from{opacity:0;transform:scale(.88);}to{opacity:1;transform:scale(1);}}
+.modal-emoji{font-size:52px;margin-bottom:16px;display:block;}
+.modal-title{font-family:var(--disp);font-size:26px;font-style:italic;color:var(--danger);margin-bottom:8px;}
+.modal-box.warn-style .modal-title{color:var(--warn);}
+.modal-stat{font-family:var(--mono);font-size:30px;font-weight:500;color:var(--danger);margin-bottom:12px;}
+.modal-box.warn-style .modal-stat{color:var(--warn);}
+.modal-sub{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:24px;}
+.modal-close{color:#fff;border:none;padding:12px 32px;border-radius:40px;font-family:var(--sans);
+  font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+
+/* Stat cards */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;}
+.sc-purple::before{background:var(--accent);}
+.sc-pink::before{background:var(--a2);}
+.sc-green::before{background:var(--a3);}
+.sc-warn::before{background:var(--warn);}
+.stat-label{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.stat-value{font-family:var(--mono);font-size:24px;font-weight:500;line-height:1;margin-bottom:6px;}
+.stat-sub{font-size:11px;color:var(--t3);}
+.stat-icon{position:absolute;right:16px;top:18px;font-size:20px;opacity:.18;}
+
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.panel-title{font-size:15px;font-weight:700;}
+.panel-action{font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;background:none;border:none;}
+
+/* Content split */
+.content-grid{display:grid;grid-template-columns:1fr 380px;gap:24px;}
+
+/* Form */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-label{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px;}
+.form-input,.form-select{background:var(--s2);border:1px solid var(--border);color:var(--text);
+  padding:10px 14px;border-radius:var(--rs);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s;width:100%;}
+.form-input:focus,.form-select:focus{border-color:var(--accent);}
+.form-input::placeholder{color:var(--t3);}
+.form-select option{background:var(--s2);}
+.submit-btn{width:100%;background:var(--accent);color:#fff;border:none;padding:12px;border-radius:var(--rs);
+  font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.submit-btn:hover{filter:brightness(1.1);}
+.form-error{background:rgba(250,109,109,.1);border:1px solid rgba(250,109,109,.3);border-radius:var(--rs);
+  padding:10px 14px;font-size:12px;color:var(--danger);display:none;margin-bottom:12px;}
+.form-error.show{display:block;}
+.budget-input-row{display:flex;gap:10px;}
+.budget-input-row .form-input{flex:1;}
+.set-btn{background:var(--s3);border:1px solid var(--border);color:var(--text);padding:10px 16px;
+  border-radius:var(--rs);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.set-btn:hover{border-color:var(--accent);color:var(--accent);}
+.prog-row{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:8px;}
+.prog-track{background:var(--s3);border-radius:4px;height:8px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:4px;transition:width .5s ease,background .3s;}
+.prog-bottom{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--t3);}
+
+/* Expense items */
+.expense-list{display:flex;flex-direction:column;gap:10px;}
+.expense-item{display:flex;align-items:center;gap:12px;background:var(--s2);border-radius:var(--rs);
+  padding:12px 14px;animation:slideIn .2s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+.cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.exp-info{flex:1;}
+.exp-name{font-size:13px;font-weight:600;margin-bottom:2px;}
+.exp-meta{font-size:11px;color:var(--t3);font-family:var(--mono);}
+.exp-amt{font-family:var(--mono);font-size:14px;font-weight:500;}
+.del-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px;padding:4px;transition:color .15s;}
+.del-btn:hover{color:var(--danger);}
+.empty{text-align:center;padding:36px 20px;color:var(--t3);}
+.empty i{font-size:28px;margin-bottom:12px;display:block;opacity:.5;}
+.empty p{font-size:13px;}
+
+/* Cat bars */
+.cat-bars{display:flex;flex-direction:column;gap:14px;}
+.cat-bar-header{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;}
+.cat-bar-name{color:var(--t2);font-weight:600;}
+.cat-bar-pct{color:var(--t3);font-family:var(--mono);}
+.cat-bar-track{background:var(--s3);border-radius:4px;height:6px;overflow:hidden;}
+.cat-bar-fill{height:100%;border-radius:4px;transition:width .5s ease;}
+
+/* MAGIC 3 — Top cat highlight */
+.top-cat-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);
+  padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.top-cat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.top-cat-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:3px;}
+.top-cat-name{font-size:14px;font-weight:700;}
+.top-cat-amt{margin-left:auto;text-align:right;}
+.top-cat-val{font-family:var(--mono);font-size:16px;font-weight:500;}
+.top-cat-pct{font-size:10px;color:var(--t3);}
+
+/* MAGIC 4 — Weekly Insights */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:20px;}
+.week-day{text-align:center;}
+.week-label{font-size:10px;color:var(--t3);margin-bottom:6px;font-weight:600;}
+.week-bar-wrap{height:64px;display:flex;align-items:flex-end;justify-content:center;}
+.week-bar{width:24px;border-radius:4px 4px 0 0;opacity:.45;transition:height .4s ease,opacity .2s;}
+.week-bar.peak{opacity:1;}
+.week-day.today .week-label{color:var(--accent);}
+.week-amt{font-size:9px;color:var(--t3);margin-top:4px;font-family:var(--mono);}
+.insight-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.chip{padding:6px 12px;border-radius:40px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;border:1px solid;}
+.chip-purple{background:rgba(124,109,250,.1);border-color:rgba(124,109,250,.3);color:var(--accent);}
+.chip-warn{background:rgba(250,188,109,.1);border-color:rgba(250,188,109,.3);color:var(--warn);}
+.chip-green{background:rgba(109,250,200,.1);border-color:rgba(109,250,200,.3);color:var(--success);}
+.chip-pink{background:rgba(250,109,138,.1);border-color:rgba(250,109,138,.3);color:var(--a2);}
+
+/* MAGIC 5 — Prediction */
+.pred-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;}
+.pred-stat{background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:16px;}
+.pred-stat-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;}
+.pred-stat-val{font-family:var(--mono);font-size:20px;font-weight:500;}
+.pred-stat-sub{font-size:10px;color:var(--t3);margin-top:4px;}
+.pred-reco{padding:16px 20px;border-radius:var(--rs);border:1px solid;margin-bottom:24px;font-size:13px;line-height:1.7;}
+.pred-reco.safe{background:rgba(109,250,200,.07);border-color:rgba(109,250,200,.25);color:var(--success);}
+.pred-reco.mid{background:rgba(250,188,109,.07);border-color:rgba(250,188,109,.25);color:var(--warn);}
+.pred-reco.danger{background:rgba(250,109,109,.07);border-color:rgba(250,109,109,.25);color:var(--danger);}
+.pred-reco i{margin-right:6px;}
+
+/* Chart tabs */
+.tab-row{display:flex;gap:4px;background:var(--s2);border-radius:var(--rs);padding:4px;width:fit-content;}
+.tab-btn{padding:6px 14px;border-radius:6px;border:none;background:none;color:var(--t2);
+  font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;}
+.tab-btn.active{background:var(--surface);color:var(--text);}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;z-index:600;background:var(--s2);border:1px solid var(--border);
+  border-radius:var(--rs);padding:12px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;
+  transform:translateY(80px);opacity:0;transition:all .3s ease;max-width:340px;}
+.toast.show{transform:translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ════ SIDEBAR ════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">B</div>
+    <div class="logo-text">Bud<span>X</span></div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <button class="nav-item active" onclick="gv('dashboard')"><i class="fas fa-th-large"></i>Dashboard</button>
+    <button class="nav-item" onclick="gv('expenses')"><i class="fas fa-list"></i>All Expenses</button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">✨ Magic Features</div>
+    <button class="nav-item" onclick="gv('insights')"><i class="fas fa-lightbulb"></i>Weekly Insights</button>
+    <button class="nav-item" onclick="gv('prediction')"><i class="fas fa-chart-line"></i>Prediction</button>
+    <button class="nav-item" onclick="gv('categories')"><i class="fas fa-tags"></i>Categories</button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Setup</div>
+    <button class="nav-item" onclick="gv('budget')"><i class="fas fa-sliders-h"></i>Budget Setup</button>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="ring-label">Monthly Usage</div>
+    <svg class="ring-svg" width="96" height="96" viewBox="0 0 96 96">
+      <circle cx="48" cy="48" r="38" fill="none" stroke="#22222f" stroke-width="9"/>
+      <circle id="ringProg" cx="48" cy="48" r="38" fill="none" stroke="#7c6dfa"
+        stroke-width="9" stroke-linecap="round" stroke-dasharray="238.76" stroke-dashoffset="238.76"
+        transform="rotate(-90 48 48)" style="transition:stroke-dashoffset .6s ease,stroke .3s;"/>
+      <text id="ringPct" x="48" y="53" text-anchor="middle" fill="#f0effe" font-family="DM Mono" font-size="14" font-weight="500">0%</text>
+    </svg>
+    <div class="ring-info">₹<strong id="ringSpent">0</strong> of ₹<strong id="ringBudget">0</strong></div>
+    <div class="threshold-row">
+      <i class="fas fa-bell" style="color:var(--warn);font-size:12px;"></i>
+      <label>Alert at</label>
+      <input type="number" id="thresholdInput" value="80" min="1" max="99" onchange="save();refresh();"/>
+      <span>%</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ════ MAIN ════ -->
+<main class="main">
+
+  <!-- ── DASHBOARD ── -->
+  <div id="view-dashboard">
+    <div class="topbar">
+      <div class="page-title">Hello, <span>Student</span> 👋</div>
+      <div class="topbar-right">
+        <div class="month-badge" id="monthBadge"></div>
+        <button class="add-btn" onclick="scrollToForm()"><i class="fas fa-plus"></i>Add Expense</button>
+      </div>
+    </div>
+
+    <!-- ★ MAGIC 1: Smart Budget Alert Card -->
+    <div class="alert-card" id="alertCard">
+      <div class="alert-icon" id="alertIcon">✅</div>
+      <div style="flex:1;">
+        <div class="alert-title" id="alertTitle"></div>
+        <div class="alert-sub" id="alertSub"></div>
+        <div class="alert-bar" style="display:none;" id="alertBar"><div class="alert-bar-fill" id="alertBarFill" style="width:0%;"></div></div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card sc-purple"><i class="fas fa-wallet stat-icon"></i>
+        <div class="stat-label">Monthly Budget</div><div class="stat-value" id="sBudget">₹0</div><div class="stat-sub">your set limit</div>
+      </div>
+      <div class="stat-card sc-pink"><i class="fas fa-arrow-up stat-icon"></i>
+        <div class="stat-label">Total Spent</div><div class="stat-value" id="sSpent">₹0</div><div class="stat-sub" id="sSpentPct">0% of budget</div>
+      </div>
+      <div class="stat-card sc-green"><i class="fas fa-piggy-bank stat-icon"></i>
+        <div class="stat-label">Remaining</div><div class="stat-value" id="sRemaining">—</div><div class="stat-sub" id="sDays">set a budget first</div>
+      </div>
+      <div class="stat-card sc-warn"><i class="fas fa-receipt stat-icon"></i>
+        <div class="stat-label">Transactions</div><div class="stat-value" id="sCount">0</div><div class="stat-sub">this month</div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <!-- Left -->
+      <div>
+        <div class="panel" style="margin-bottom:24px;">
+          <div class="panel-header">
+            <div class="panel-title">Spending by Category</div>
+            <div class="tab-row">
+              <button class="tab-btn active" id="tabD" onclick="switchChart('doughnut')">Doughnut</button>
+              <button class="tab-btn" id="tabB" onclick="switchChart('bar')">Bar</button>
+            </div>
+          </div>
+          <div id="chartEmpty" class="empty" style="display:none;padding:24px;"><i class="fas fa-chart-pie"></i><p>Add expenses to see breakdown</p></div>
+          <div style="height:210px;position:relative;" id="chartWrap">
+            <canvas id="catChart" role="img" aria-label="Spending by category">Category breakdown.</canvas>
+          </div>
+          <div id="chartLegend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;font-size:11px;"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Recent Expenses</div>
+            <button class="panel-action" onclick="gv('expenses')">View all →</button>
+          </div>
+          <div class="expense-list" id="recentList"><div class="empty"><i class="fas fa-inbox"></i><p>No expenses yet</p></div></div>
+        </div>
+      </div>
+
+      <!-- Right -->
+      <div>
+        <div class="panel" id="addPanel" style="margin-bottom:20px;">
+          <div class="panel-header"><div class="panel-title">Add Expense</div></div>
+          <div class="form-error" id="formError"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="expName" placeholder="e.g. Swiggy order"/></div>
+            <div class="form-group"><label class="form-label">Amount (₹)</label><input class="form-input" id="expAmt" type="number" placeholder="0" min="0"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select class="form-select" id="expCat">
+                <option value="">Select...</option>
+                <option value="Food">🍔 Food</option><option value="Transport">🚌 Transport</option>
+                <option value="Shopping">🛍️ Shopping</option><option value="Bills">💡 Bills</option>
+                <option value="Health">🏥 Health</option><option value="Entertainment">🎬 Entertainment</option>
+                <option value="Education">📚 Education</option><option value="Other">📦 Other</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="expDate" type="date"/></div>
+          </div>
+          <button class="submit-btn" onclick="addExpense()"><i class="fas fa-plus-circle"></i>Submit Expense</button>
+        </div>
+
+        <div class="panel" style="margin-bottom:20px;">
+          <div class="panel-header"><div class="panel-title">Monthly Budget</div></div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Set Limit (₹)</label>
+            <div class="budget-input-row">
+              <input class="form-input" id="budgetInput" type="number" placeholder="e.g. 8000"/>
+              <button class="set-btn" onclick="setBudget()">Set</button>
+            </div>
+          </div>
+          <div id="budgetProg" style="display:none;">
+            <div class="prog-row"><span>₹<span id="pSpent">0</span> spent</span><span>₹<span id="pBudget">0</span> limit</span></div>
+            <div class="prog-track"><div class="prog-fill" id="pFill" style="width:0%;background:var(--accent);"></div></div>
+            <div class="prog-bottom"><span id="pPct">0% used</span><span id="pLeft">₹0 left</span></div>
+          </div>
+        </div>
+
+        <!-- ★ MAGIC 3: Category Tracker with Top-Category Highlight -->
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Category Tracker</div></div>
+          <div id="topCatCard" style="display:none;" class="top-cat-card">
+            <div class="top-cat-icon" id="topCatIcon"></div>
+            <div><div class="top-cat-label">Highest Spend</div><div class="top-cat-name" id="topCatName">—</div></div>
+            <div class="top-cat-amt"><div class="top-cat-val" id="topCatVal">₹0</div><div class="top-cat-pct" id="topCatPct"></div></div>
+          </div>
+          <div class="cat-bars" id="catBars"><div class="empty" style="padding:16px;"><i class="fas fa-tags"></i><p>No data yet</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ALL EXPENSES ── -->
+  <div id="view-expenses" style="display:none;">
+    <div class="topbar">
+      <div class="page-title">All <span>Expenses</span></div>
+      <button class="back-btn" onclick="gv('dashboard')"><i class="fas fa-arrow-left"></i>Back</button>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Expense Log</div>
+        <select class="form-select" style="width:160px;padding:6px 12px;font-size:12px;" id="filterCat" onchange="renderAllExpenses()">
+          <option value="">All Categories</option>
+          <option value="Food">Food</option><option value="Transport">Transport</option><option value="Shopping">Shopping</option>
+          <option value="Bills">Bills</option><option value="Health">Health</option><option value="Entertainment">Entertainment</option>
+          <option value="Education">Education</option><option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="expense-list" id="allList"></div>
+    </div>
+  </div>
+
+  <!-- ── ★ MAGIC 4: WEEKLY INSIGHTS ── -->
+  <div id="view-insights" style="display:none;">
+    <div class="topbar">
+      <div class="page-title">Weekly <span>Insights</span> 📊</div>
+      <button class="back-btn" onclick="gv('dashboard')"><i class="fas fa-arrow-left"></i>Back</button>
+    </div>
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="panel-header">
+        <div class="panel-title">This Week's Spending</div>
+        <div style="font-size:12px;color:var(--t3);">Total: <span style="color:var(--text);font-family:var(--mono);" id="weekTotalBig">₹0</span></div>
+      </div>
+      <div class="week-grid" id="weekGridBig"></div>
+      <!-- Plain-English Insights -->
+      <div class="insight-chips" id="insightChips"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Where money went</div></div>
+        <div style="height:240px;position:relative;"><canvas id="weekCatChart" role="img" aria-label="Weekly category split">Weekly categories.</canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Day-by-day</div></div>
+        <div style="height:240px;position:relative;"><canvas id="weekBarChart" role="img" aria-label="Daily spending">Daily spending.</canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ★ MAGIC 5: SPENDING PREDICTION ── -->
+  <div id="view-prediction" style="display:none;">
+    <div class="topbar">
+      <div class="page-title">Spending <span>Prediction</span> 🔮</div>
+      <button class="back-btn" onclick="gv('dashboard')"><i class="fas fa-arrow-left"></i>Back</button>
+    </div>
+    <div class="pred-grid">
+      <div class="pred-stat">
+        <div class="pred-stat-label">Daily Average</div>
+        <div class="pred-stat-val" id="predAvg">₹0</div>
+        <div class="pred-stat-sub">spent per day so far</div>
+      </div>
+      <div class="pred-stat">
+        <div class="pred-stat-label">Projected Month-end</div>
+        <div class="pred-stat-val" id="predEnd" style="color:var(--warn);">₹0</div>
+        <div class="pred-stat-sub">if pace continues</div>
+      </div>
+      <div class="pred-stat">
+        <div class="pred-stat-label">Safe Daily Limit</div>
+        <div class="pred-stat-val" id="predSafe" style="color:var(--success);">₹0</div>
+        <div class="pred-stat-sub">to stay within budget</div>
+      </div>
+    </div>
+    <div class="pred-reco safe" id="predReco"><i class="fas fa-robot"></i><span id="predRecoText">Add expenses and set a budget to activate predictions.</span></div>
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="panel-header">
+        <div class="panel-title">30-day Projection</div>
+        <div style="display:flex;gap:16px;font-size:11px;color:var(--t2);">
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:20px;height:2px;background:#7c6dfa;display:inline-block;border-radius:2px;"></span>Actual</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:20px;height:2px;background:#fabc6d;display:inline-block;border-radius:2px;border:1px dashed #fabc6d;"></span>Projected</span>
+          <span id="budLegend" style="display:none;align-items:center;gap:5px;"><span style="width:20px;height:2px;background:#fa6d6d;display:inline-block;border-radius:2px;"></span>Budget</span>
+        </div>
+      </div>
+      <div style="height:260px;position:relative;"><canvas id="projChart" role="img" aria-label="Spending projection">Projection chart.</canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">6-Month History</div></div>
+      <div style="height:200px;position:relative;"><canvas id="trendChart" role="img" aria-label="Six month trend">Trend chart.</canvas></div>
+    </div>
+  </div>
+
+  <!-- ── CATEGORIES ── -->
+  <div id="view-categories" style="display:none;">
+    <div class="topbar">
+      <div class="page-title"><span>Category</span> Summary</div>
+      <button class="back-btn" onclick="gv('dashboard')"><i class="fas fa-arrow-left"></i>Back</button>
+    </div>
+    <div class="stat-grid" id="catSummaryCards"></div>
+  </div>
+
+  <!-- ── BUDGET SETUP ── -->
+  <div id="view-budget" style="display:none;">
+    <div class="topbar">
+      <div class="page-title">Budget <span>Setup</span></div>
+      <button class="back-btn" onclick="gv('dashboard')"><i class="fas fa-arrow-left"></i>Back</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Category Budgets</div></div>
+        <div id="catBudgetForm" style="display:flex;flex-direction:column;gap:12px;"></div>
+        <button class="submit-btn" style="margin-top:16px;" onclick="saveCatBudgets()"><i class="fas fa-save"></i>Save Budgets</button>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Budget vs Actual</div></div>
+        <div style="height:300px;position:relative;"><canvas id="bvaChart" role="img" aria-label="Budget vs actual">Budget chart.</canvas></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ★ MAGIC 2: Overspend / Alert Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox">
+    <span class="modal-emoji" id="modalEmoji">🚨</span>
+    <div class="modal-title" id="modalTitle">Budget Exceeded!</div>
+    <div class="modal-stat" id="modalStat">₹0 over limit</div>
+    <div class="modal-sub" id="modalSub">You have exceeded your monthly budget.</div>
+    <button class="modal-close" id="modalCloseBtn" onclick="closeModal()" style="background:var(--danger);">Got it, I'll be careful</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="fas fa-check-circle" style="color:var(--success);"></i><span id="toastMsg"></span></div>
+
+<script>
+// ══ CONSTANTS ══
+const CATS = ['Food','Transport','Shopping','Bills','Health','Entertainment','Education','Other'];
+const COL = {Food:'#fa6d8a',Transport:'#6d9dfa',Shopping:'#fac86d',Bills:'#fa6d6d',
+             Health:'#6dfac8',Entertainment:'#c86dfa',Education:'#6dcffa',Other:'#a0a0a0'};
+const EMO = {Food:'🍔',Transport:'🚌',Shopping:'🛍️',Bills:'💡',
+             Health:'🏥',Entertainment:'🎬',Education:'📚',Other:'📦'};
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// ══ STATE ══
+let S = {expenses:[],budget:0,catBudgets:{},alertThreshold:80};
+let CH = {};
+let modalShown = {over:false,warn:false};
+
+// ══ INIT ══
+function init() {
+  const raw = localStorage.getItem('budx3');
+  if (raw) S = JSON.parse(raw);
+  const now = new Date();
+  document.getElementById('expDate').value = now.toISOString().split('T')[0];
+  document.getElementById('monthBadge').textContent = now.toLocaleString('default',{month:'long',year:'numeric'});
+  document.getElementById('thresholdInput').value = S.alertThreshold || 80;
+  buildCatBudgetForm();
+  refresh();
+}
+
+function save() {
+  S.alertThreshold = parseInt(document.getElementById('thresholdInput').value) || 80;
+  localStorage.setItem('budx3', JSON.stringify(S));
+}
+
+// ══ ADD EXPENSE ══
+function addExpense() {
+  const name = document.getElementById('expName').value.trim();
+  const amount = parseFloat(document.getElementById('expAmt').value);
+  const cat = document.getElementById('expCat').value;
+  const date = document.getElementById('expDate').value;
+  const err = document.getElementById('formError');
+  err.classList.remove('show');
+  if (!name)           { err.textContent='Enter a description'; err.classList.add('show'); return; }
+  if (!amount||amount<=0){ err.textContent='Enter a valid amount'; err.classList.add('show'); return; }
+  if (!cat)            { err.textContent='Select a category'; err.classList.add('show'); return; }
+  if (!date)           { err.textContent='Select a date'; err.classList.add('show'); return; }
+  S.expenses.unshift({id:Date.now(),name,amount,category:cat,date});
+  save(); refresh();
+  checkModal();   // ★ MAGIC 2 — instant check
+  showToast('Expense added!');
+  document.getElementById('expName').value='';
+  document.getElementById('expAmt').value='';
+  document.getElementById('expCat').value='';
+}
+
+function deleteExpense(id) {
+  S.expenses = S.expenses.filter(e=>e.id!==id);
+  modalShown = {over:false,warn:false};
+  save(); refresh();
+  showToast('Deleted');
+}
+
+function setBudget() {
+  const v = parseFloat(document.getElementById('budgetInput').value);
+  if (!v||v<=0) { showToast('Enter a valid budget'); return; }
+  S.budget = v; modalShown={over:false,warn:false};
+  save(); refresh();
+  showToast('Budget set to ₹'+fmt(v));
+}
+
+function saveCatBudgets() {
+  CATS.forEach(c=>{const i=document.getElementById('catb_'+c);if(i&&i.value)S.catBudgets[c]=parseFloat(i.value)||0;});
+  save(); refresh(); showToast('Category budgets saved!');
+}
+
+// ══ REFRESH ══
+function refresh() {
+  const now = new Date();
+  const mE = mExp(now);
+  const total = mE.reduce((s,e)=>s+e.amount,0);
+  const pct = S.budget>0?(total/S.budget)*100:0;
+  const rem = S.budget-total;
+  const thr = parseInt(document.getElementById('thresholdInput').value)||80;
+
+  // Stats
+  document.getElementById('sBudget').textContent='₹'+fmt(S.budget);
+  document.getElementById('sSpent').textContent='₹'+fmt(total);
+  document.getElementById('sRemaining').textContent=S.budget>0?'₹'+fmt(rem):'—';
+  document.getElementById('sCount').textContent=mE.length;
+  document.getElementById('sSpentPct').textContent=S.budget>0?pct.toFixed(0)+'% of budget':'no budget set';
+  const dL=new Date(now.getFullYear(),now.getMonth()+1,0).getDate()-now.getDate();
+  document.getElementById('sDays').textContent=S.budget>0?dL+' days left':'set a budget first';
+
+  // Ring
+  const cp=Math.min(pct,100);
+  document.getElementById('ringProg').style.strokeDashoffset=238.76-(cp/100)*238.76;
+  document.getElementById('ringProg').style.stroke=pct>=100?'#fa6d6d':pct>=thr?'#fabc6d':'#7c6dfa';
+  document.getElementById('ringPct').textContent=pct.toFixed(0)+'%';
+  document.getElementById('ringSpent').textContent=fmt(total);
+  document.getElementById('ringBudget').textContent=fmt(S.budget);
+
+  // ★ MAGIC 1
+  renderAlertCard(pct, total, rem, thr);
+
+  // Budget bar
+  if(S.budget>0){
+    document.getElementById('budgetProg').style.display='block';
+    document.getElementById('pSpent').textContent=fmt(total);
+    document.getElementById('pBudget').textContent=fmt(S.budget);
+    document.getElementById('pPct').textContent=pct.toFixed(0)+'% used';
+    document.getElementById('pLeft').textContent='₹'+fmt(rem)+' left';
+    const pf=document.getElementById('pFill');
+    pf.style.width=cp+'%';
+    pf.style.background=pct>=100?'#fa6d6d':pct>=thr?'#fabc6d':'#7c6dfa';
+  }
+  if(S.budget>0) document.getElementById('budgetInput').value=S.budget;
+
+  renderRecentList(mE);
+  renderCatChart(mE);
+  renderCatBars(mE);
+}
+
+// ═══ ★ MAGIC 1: SMART BUDGET ALERT CARD ═══
+function renderAlertCard(pct, total, rem, thr) {
+  const card=document.getElementById('alertCard');
+  const bar=document.getElementById('alertBar');
+  const fill=document.getElementById('alertBarFill');
+  if(!S.budget){ card.className='alert-card'; return; }
+  bar.style.display='block';
+  fill.style.width=Math.min(pct,100).toFixed(1)+'%';
+  card.classList.add('show');
+  let cls,icon,title,sub,fillColor;
+  if(pct>=100){
+    cls='danger'; icon='🚨'; title='⛔ Budget Exceeded!';
+    sub=`You've spent <strong>₹${fmt(total-S.budget)} over</strong> your ₹${fmt(S.budget)} limit. Review your expenses and cut back on non-essentials.`;
+    fillColor='#fa6d6d';
+  } else if(pct>=thr){
+    cls='mid'; icon='⚠️'; title=`Alert: ${pct.toFixed(0)}% of Budget Used!`;
+    sub=`You've hit your ${thr}% alert threshold. Only <strong>₹${fmt(rem)}</strong> remains for the rest of the month. Spend carefully!`;
+    fillColor='#fabc6d';
+  } else if(pct>=50){
+    cls='mid'; icon='📊'; title='Halfway through your budget';
+    sub=`₹${fmt(rem)} remaining. You're on track — keep a close eye as the month progresses.`;
+    fillColor='#fabc6d';
+  } else {
+    cls='safe'; icon='✅'; title="You're within budget — great job!";
+    sub=`₹${fmt(rem)} still available. Continue tracking daily to stay on top of your finances.`;
+    fillColor='#6dfac8';
+  }
+  card.className='alert-card '+cls+' show';
+  document.getElementById('alertIcon').textContent=icon;
+  document.getElementById('alertTitle').textContent=title;
+  document.getElementById('alertSub').innerHTML=sub;
+  fill.style.background=fillColor;
+}
+
+// ═══ ★ MAGIC 2: OVERSPEND MODAL ═══
+function checkModal() {
+  if(!S.budget) return;
+  const total=mExp(new Date()).reduce((s,e)=>s+e.amount,0);
+  const pct=(total/S.budget)*100;
+  const thr=parseInt(document.getElementById('thresholdInput').value)||80;
+  if(pct>=100&&!modalShown.over){ modalShown.over=true; showModal('over',total); }
+  else if(pct>=thr&&pct<100&&!modalShown.warn){ modalShown.warn=true; showModal('warn',total); }
+}
+
+function showModal(type, total) {
+  const thr=parseInt(document.getElementById('thresholdInput').value)||80;
+  const over=total-S.budget;
+  const rem=S.budget-total;
+  const box=document.getElementById('modalBox');
+  const btn=document.getElementById('modalCloseBtn');
+  if(type==='over'){
+    box.className='modal-box';
+    document.getElementById('modalEmoji').textContent='🚨';
+    document.getElementById('modalTitle').textContent='Budget Exceeded!';
+    document.getElementById('modalStat').textContent='₹'+fmt(over)+' over limit';
+    document.getElementById('modalSub').textContent=`You've spent ₹${fmt(total)} against your ₹${fmt(S.budget)} budget (${((total/S.budget)*100).toFixed(0)}% used). Time to cut back on spending!`;
+    btn.style.background='#fa6d6d';
+    btn.textContent="Got it, I'll be careful";
+  } else {
+    box.className='modal-box warn-style';
+    document.getElementById('modalEmoji').textContent='⚠️';
+    document.getElementById('modalTitle').textContent=thr+'% Alert — Heads Up!';
+    document.getElementById('modalStat').textContent='₹'+fmt(rem)+' remaining';
+    document.getElementById('modalSub').textContent=`You've used ${thr}% of your monthly budget. Only ₹${fmt(rem)} is left. Be mindful of upcoming expenses!`;
+    btn.style.background='#fabc6d';
+    btn.textContent="Understood, I'll be careful";
+  }
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
+
+// ═══ CATEGORY CHART ═══
+let chartType='doughnut';
+function switchChart(t){
+  chartType=t;
+  document.getElementById('tabD').className='tab-btn'+(t==='doughnut'?' active':'');
+  document.getElementById('tabB').className='tab-btn'+(t==='bar'?' active':'');
+  renderCatChart(mExp(new Date()));
+}
+
+function renderCatChart(expenses) {
+  const tot=catTot(expenses); const labels=Object.keys(tot); const data=Object.values(tot);
+  const colors=labels.map(l=>COL[l]||'#888');
+  if(!labels.length){document.getElementById('chartWrap').style.display='none';document.getElementById('chartEmpty').style.display='block';document.getElementById('chartLegend').innerHTML='';return;}
+  document.getElementById('chartWrap').style.display='block';document.getElementById('chartEmpty').style.display='none';
+  if(CH.cat) CH.cat.destroy();
+  CH.cat=new Chart(document.getElementById('catChart'),{
+    type:chartType,
+    data:{labels,datasets:[{data,backgroundColor:colors.map(c=>c+'cc'),borderColor:colors,borderWidth:2,borderRadius:chartType==='bar'?6:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:chartType==='bar'?{x:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:11}}},y:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:11},callback:v=>'₹'+v}}}:{},
+      cutout:chartType==='doughnut'?'65%':0}
+  });
+  document.getElementById('chartLegend').innerHTML=labels.map((l,i)=>
+    `<span style="display:flex;align-items:center;gap:5px;color:var(--t2);font-size:11px;font-weight:600;">
+      <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span>${l} ₹${fmt(data[i])}
+    </span>`).join('');
+}
+
+// ═══ ★ MAGIC 3: CATEGORY TRACKER ═══
+function renderCatBars(expenses) {
+  const tot=catTot(expenses); const entries=Object.entries(tot); const total=expenses.reduce((s,e)=>s+e.amount,0);
+  const maxAmt=entries[0]?.[1]||1;
+  const topEl=document.getElementById('topCatCard');
+  if(entries.length){
+    const [tCat,tAmt]=entries[0];
+    topEl.style.display='flex';
+    const icon=document.getElementById('topCatIcon');
+    icon.textContent=EMO[tCat]||'💰'; icon.style.background=(COL[tCat]||'#888')+'22';
+    document.getElementById('topCatName').textContent=tCat;
+    document.getElementById('topCatVal').textContent='₹'+fmt(tAmt); document.getElementById('topCatVal').style.color=COL[tCat]||'#888';
+    document.getElementById('topCatPct').textContent=total>0?((tAmt/total)*100).toFixed(0)+'% of total':'';
+  } else topEl.style.display='none';
+  const el=document.getElementById('catBars');
+  if(!entries.length){el.innerHTML='<div class="empty" style="padding:16px;"><i class="fas fa-tags"></i><p>No data yet</p></div>';return;}
+  el.innerHTML=entries.map(([cat,amt])=>{
+    const p=((amt/maxAmt)*100).toFixed(1);
+    const pOfTotal=total>0?((amt/total)*100).toFixed(0):0;
+    const over=S.catBudgets[cat]&&amt>S.catBudgets[cat];
+    return `<div class="cat-bar-item">
+      <div class="cat-bar-header">
+        <span class="cat-bar-name">${EMO[cat]||''} ${cat}${over?' <span style="color:var(--danger);font-size:10px;font-weight:700;">⚡ over limit</span>':''}</span>
+        <span class="cat-bar-pct">${pOfTotal}% · ₹${fmt(amt)}</span>
+      </div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${p}%;background:${COL[cat]||'#888'};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ═══ ★ MAGIC 4: WEEKLY INSIGHTS VIEW ═══
+function renderInsightsView() {
+  const now=new Date(); const dayIdx=now.getDay();
+  const weekStart=new Date(now); weekStart.setDate(now.getDate()-dayIdx); weekStart.setHours(0,0,0,0);
+  const mE=mExp(now);
+  const dayTots={};
+  mE.forEach(e=>{const d=new Date(e.date);if(d>=weekStart)dayTots[d.getDay()]=(dayTots[d.getDay()]||0)+e.amount;});
+  const weekTotal=Object.values(dayTots).reduce((a,b)=>a+b,0);
+  const maxDay=Math.max(...Object.values(dayTots),1);
+  const peakDay=Object.entries(dayTots).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('weekTotalBig').textContent='₹'+fmt(weekTotal);
+
+  // Build week grid
+  document.getElementById('weekGridBig').innerHTML=DAYS.map((d,i)=>{
+    const amt=dayTots[i]||0;
+    const h=Math.max(4,(amt/maxDay)*56);
+    const isPeak=peakDay&&i===parseInt(peakDay[0]);
+    const isToday=i===dayIdx;
+    return `<div class="week-day${isToday?' today':''}">
+      <div class="week-label">${d}</div>
+      <div class="week-bar-wrap"><div class="week-bar${isPeak?' peak':''}" style="height:${h}px;background:${isToday?'var(--accent)':'var(--accent)'};"></div></div>
+      <div class="week-amt">${amt>0?'₹'+fmt(amt):''}</div>
+    </div>`;
+  }).join('');
+
+  // ★ Plain-English insight chips
+  const chips=[];
+  if(peakDay) chips.push({text:`Most spent on ${DAYS[peakDay[0]]} (₹${fmt(peakDay[1])})`,cls:'chip-warn'});
+  const wCatTot=catTot(mE.filter(e=>new Date(e.date)>=weekStart));
+  const topWCat=Object.entries(wCatTot).sort((a,b)=>b[1]-a[1])[0];
+  if(topWCat) chips.push({text:`${EMO[topWCat[0]]} ${topWCat[0]} is your top spend`,cls:'chip-pink'});
+  if(weekTotal>0&&S.budget>0){
+    const wb=S.budget/4.33;
+    chips.push(weekTotal>wb?{text:`⚡ ₹${fmt(weekTotal-wb)} over weekly budget`,cls:'chip-warn'}:{text:'✓ Within weekly budget',cls:'chip-green'});
+  }
+  const activeDays=Object.keys(dayTots).length||1;
+  chips.push({text:`₹${fmt(weekTotal/activeDays)}/day average`,cls:'chip-purple'});
+  const quietDay=Object.entries(dayTots).filter(([,v])=>v>0).sort((a,b)=>a[1]-b[1])[0];
+  if(quietDay) chips.push({text:`Lightest day: ${DAYS[quietDay[0]]}`,cls:'chip-green'});
+  document.getElementById('insightChips').innerHTML=chips.map(c=>`<div class="chip ${c.cls}">${c.text}</div>`).join('');
+
+  // Week cat chart
+  if(CH.wCat) CH.wCat.destroy();
+  const wCL=Object.keys(wCatTot); const wCD=Object.values(wCatTot);
+  if(wCL.length) CH.wCat=new Chart(document.getElementById('weekCatChart'),{
+    type:'doughnut',data:{labels:wCL,datasets:[{data:wCD,backgroundColor:wCL.map(k=>(COL[k]||'#888')+'cc'),borderColor:wCL.map(k=>COL[k]||'#888'),borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a09dcc',font:{size:10}},position:'bottom'}},cutout:'60%'}
+  });
+
+  // Week bar chart
+  if(CH.wBar) CH.wBar.destroy();
+  CH.wBar=new Chart(document.getElementById('weekBarChart'),{
+    type:'bar',data:{labels:DAYS,datasets:[{data:DAYS.map((_,i)=>dayTots[i]||0),
+      backgroundColor:DAYS.map((_,i)=>i===dayIdx?'rgba(124,109,250,.85)':'rgba(124,109,250,.35)'),
+      borderColor:'#7c6dfa',borderWidth:2,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:11}}},y:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:11},callback:v=>'₹'+v}}}}
+  });
+}
+
+// ═══ ★ MAGIC 5: SPENDING PREDICTION VIEW ═══
+function renderPredictionView() {
+  const now=new Date(); const mE=mExp(now);
+  const total=mE.reduce((s,e)=>s+e.amount,0);
+  const day=now.getDate();
+  const totalDays=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const dLeft=totalDays-day;
+  const dailyAvg=day>0?total/day:0;
+  const projected=dailyAvg*totalDays;
+  const safe=S.budget>0&&dLeft>0?(S.budget-total)/dLeft:0;
+
+  document.getElementById('predAvg').textContent='₹'+fmt(dailyAvg);
+  document.getElementById('predEnd').textContent='₹'+fmt(projected);
+  document.getElementById('predEnd').style.color=projected>S.budget&&S.budget>0?'#fa6d6d':'#fabc6d';
+  document.getElementById('predSafe').textContent=safe>0?'₹'+fmt(safe):'—';
+
+  // Recommendation
+  const reco=document.getElementById('predReco');
+  const rt=document.getElementById('predRecoText');
+  if(!S.budget||!mE.length){
+    reco.className='pred-reco safe'; rt.innerHTML='<i class="fas fa-robot"></i> Add some expenses and set a budget to activate personalised predictions.';
+  } else if(projected>S.budget*1.2){
+    reco.className='pred-reco danger'; rt.innerHTML=`<i class="fas fa-exclamation-triangle"></i> At your current daily spend of ₹${fmt(dailyAvg)}, you'll <strong>exceed your budget by ₹${fmt(projected-S.budget)}</strong> by month end. Limit yourself to ₹${fmt(safe)}/day for the next ${dLeft} days.`;
+  } else if(projected>S.budget){
+    reco.className='pred-reco mid'; rt.innerHTML=`<i class="fas fa-exclamation-circle"></i> You're projected to slightly exceed budget. Keep daily spending under <strong>₹${fmt(safe)}</strong> to finish within ₹${fmt(S.budget)}.`;
+  } else {
+    reco.className='pred-reco safe'; rt.innerHTML=`<i class="fas fa-check-circle"></i> Excellent! You're projected to end at <strong>₹${fmt(projected)}</strong> — ₹${fmt(S.budget-projected)} under budget. Great discipline!`;
+  }
+
+  // Projection chart
+  const labels=[]; const actual=[]; const proj=[];
+  let running=0;
+  for(let d=1;d<=totalDays;d++){
+    labels.push(d);
+    const key=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dSpend=mE.filter(e=>e.date===key).reduce((s,e)=>s+e.amount,0);
+    if(d<=day){running+=dSpend;actual.push(running);proj.push(null);}
+    else{actual.push(null);proj.push(+(total+dailyAvg*(d-day)).toFixed(0));}
+  }
+  const datasets=[
+    {label:'Actual',data:actual,borderColor:'#7c6dfa',backgroundColor:'rgba(124,109,250,.07)',tension:0.3,fill:true,pointRadius:2,pointBackgroundColor:'#7c6dfa'},
+    {label:'Projected',data:proj,borderColor:'#fabc6d',borderDash:[6,4],backgroundColor:'rgba(250,188,109,.05)',tension:0.3,fill:true,pointRadius:2,pointBackgroundColor:'#fabc6d'}
+  ];
+  if(S.budget>0){
+    datasets.push({label:'Budget',data:labels.map(()=>S.budget),borderColor:'rgba(250,109,109,.55)',borderWidth:1.5,borderDash:[4,4],pointRadius:0,fill:false});
+    document.getElementById('budLegend').style.display='flex';
+  }
+  if(CH.proj) CH.proj.destroy();
+  CH.proj=new Chart(document.getElementById('projChart'),{
+    type:'line',data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:10},maxTicksLimit:10}},
+              y:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:10},callback:v=>'₹'+v}}}}
+  });
+
+  // 6-month trend
+  const months=[]; const mTots=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push(d.toLocaleString('default',{month:'short'}));
+    mTots.push(S.expenses.filter(e=>{const ed=new Date(e.date);return ed.getMonth()===d.getMonth()&&ed.getFullYear()===d.getFullYear();}).reduce((s,e)=>s+e.amount,0));
+  }
+  if(CH.trend) CH.trend.destroy();
+  CH.trend=new Chart(document.getElementById('trendChart'),{
+    type:'line',data:{labels:months,datasets:[{data:mTots,borderColor:'#6dfac8',backgroundColor:'rgba(109,250,200,.06)',tension:0.4,fill:true,pointBackgroundColor:'#6dfac8',pointRadius:5,pointHoverRadius:7}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:11}}},y:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:11},callback:v=>'₹'+v}}}}
+  });
+}
+
+// ═══ ALL EXPENSES VIEW ═══
+function renderAllExpenses() {
+  const filter=document.getElementById('filterCat').value;
+  let list=filter?S.expenses.filter(e=>e.category===filter):[...S.expenses];
+  const el=document.getElementById('allList');
+  el.innerHTML=list.length?list.map(e=>expHTML(e)).join(''):'<div class="empty"><i class="fas fa-inbox"></i><p>No expenses found</p></div>';
+}
+
+// ═══ CATEGORY SUMMARY VIEW ═══
+function renderCatSummary() {
+  const tot=catTot(S.expenses);
+  document.getElementById('catSummaryCards').innerHTML=CATS.map(cat=>{
+    const amt=tot[cat]||0; const cnt=S.expenses.filter(e=>e.category===cat).length;
+    const over=S.catBudgets[cat]&&amt>S.catBudgets[cat];
+    return `<div class="stat-card sc-purple" style="border-left-color:${COL[cat]};">
+      <div style="font-size:20px;margin-bottom:8px;">${EMO[cat]}</div>
+      <div class="stat-label">${cat}</div>
+      <div class="stat-value" style="color:${COL[cat]}">${amt>0?'₹'+fmt(amt):'—'}</div>
+      <div class="stat-sub">${cnt} transactions${over?'<br><span style="color:var(--danger);font-size:10px;">over limit!</span>':''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══ BUDGET VIEW ═══
+function buildCatBudgetForm() {
+  document.getElementById('catBudgetForm').innerHTML=CATS.map(cat=>
+    `<div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:18px;">${EMO[cat]}</span>
+      <span style="font-size:13px;font-weight:600;flex:1;color:var(--t2);">${cat}</span>
+      <input class="form-input" id="catb_${cat}" type="number" placeholder="₹ limit" style="width:120px;" value="${S.catBudgets[cat]||''}"/>
+    </div>`).join('');
+}
+
+function renderBudgetView() {
+  buildCatBudgetForm();
+  const now=new Date(); const mE=mExp(now); const tot=catTot(mE);
+  const cats=CATS.filter(c=>S.catBudgets[c]||tot[c]);
+  if(!cats.length) return;
+  if(CH.bva) CH.bva.destroy();
+  CH.bva=new Chart(document.getElementById('bvaChart'),{
+    type:'bar',data:{labels:cats,datasets:[
+      {label:'Budget',data:cats.map(c=>S.catBudgets[c]||0),backgroundColor:'rgba(124,109,250,.4)',borderColor:'#7c6dfa',borderWidth:2,borderRadius:4},
+      {label:'Actual',data:cats.map(c=>tot[c]||0),backgroundColor:cats.map(c=>(tot[c]||0)>(S.catBudgets[c]||Infinity)?'rgba(250,109,109,.5)':'rgba(109,250,200,.4)'),borderColor:cats.map(c=>(tot[c]||0)>(S.catBudgets[c]||Infinity)?'#fa6d6d':'#6dfac8'),borderWidth:2,borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a09dcc',font:{size:10}}}},
+      scales:{x:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:11}}},y:{grid:{color:'#22222f'},ticks:{color:'#a09dcc',font:{size:11},callback:v=>'₹'+v}}}}
+  });
+}
+
+// ═══ EXPENSE HTML ═══
+function expHTML(e) {
+  return `<div class="expense-item">
+    <div class="cat-dot" style="background:${COL[e.category]||'#888'}"></div>
+    <div class="exp-info">
+      <div class="exp-name">${e.name}</div>
+      <div class="exp-meta">${EMO[e.category]||''} ${e.category} · ${new Date(e.date).toLocaleDateString('en-IN',{month:'short',day:'numeric'})}</div>
+    </div>
+    <div class="exp-amt" style="color:${COL[e.category]||'#888'}">₹${fmt(e.amount)}</div>
+    <button class="del-btn" onclick="deleteExpense(${e.id})"><i class="fas fa-times"></i></button>
+  </div>`;
+}
+
+// ═══ VIEW SWITCH ═══
+const VIEWS=['dashboard','expenses','insights','prediction','categories','budget'];
+function gv(view) {
+  VIEWS.forEach(v=>document.getElementById('view-'+v).style.display=v===view?'block':'none');
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>{if(b.getAttribute('onclick')===`gv('${view}')`)b.classList.add('active');});
+  if(view==='expenses')   renderAllExpenses();
+  if(view==='insights')   renderInsightsView();
+  if(view==='prediction') renderPredictionView();
+  if(view==='categories') renderCatSummary();
+  if(view==='budget')     renderBudgetView();
+}
+
+// ═══ HELPERS ═══
+function mExp(now){return S.expenses.filter(e=>{const d=new Date(e.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});}
+function catTot(expenses){const t={};expenses.forEach(e=>{t[e.category]=(t[e.category]||0)+e.amount;});return Object.fromEntries(Object.entries(t).sort((a,b)=>b[1]-a[1]));}
+function fmt(n){return(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});}
+function scrollToForm(){gv('dashboard');document.getElementById('addPanel').scrollIntoView({behavior:'smooth'});}
+function renderRecentList(expenses){const el=document.getElementById('recentList');const l=expenses.slice(0,6);el.innerHTML=l.length?l.map(e=>expHTML(e)).join(''):'<div class="empty"><i class="fas fa-inbox"></i><p>No expenses yet</p></div>';}
+let toastT;
+function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3000);}
+
+init();
+</script>
+</body>
+</html>
